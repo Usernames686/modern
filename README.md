@@ -6,6 +6,7 @@
 
 - 交付说明：`docs/交付说明.md`
 - 开发运维手册：`docs/开发运维手册.md`
+- 原始交付资料：`docs/legacy-delivery/`
 - 运行依赖说明：`legacy-deps/README.md`
 - 老源码副本说明：`legacy-source/README.md`
 - 交付审计记录：`DELIVERY_AUDIT.md`
