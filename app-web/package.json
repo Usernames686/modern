@@ -1,0 +1,37 @@
+{
+  "name": "crmeb-modern-app-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 19528",
+    "check:delivery": "npm run check:local-entry && npm run check:release-copy && npm run check:legacy-url-parsing && npm run check:legacy-routes && npm run check:legacy-short-links && npm run check:menu-routing && npm run check:home-diy && npm run check:home-index-table && npm run check:activity-flow && npm run check:promotion-list && npm run check:small-page && npm run check:legacy-safe && npm run check:spread-routes && npm run check:spread-bind && npm run check:visit-record && npm run check:activity-visit-record",
+    "check:local-entry": "node scripts/check-local-entry.mjs",
+    "check:home-diy": "node scripts/check-home-diy.mjs",
+    "check:home-index-table": "node scripts/check-home-index-table.mjs",
+    "check:activity-flow": "node scripts/check-activity-flow.mjs",
+    "check:promotion-list": "node scripts/check-promotion-list.mjs",
+    "check:small-page": "node scripts/check-small-page.mjs",
+    "check:legacy-safe": "node scripts/check-legacy-safe.mjs",
+    "check:spread-routes": "node scripts/check-spread-routes.mjs",
+    "check:spread-bind": "node scripts/check-spread-bind.mjs",
+    "check:visit-record": "node scripts/check-visit-record.mjs",
+    "check:activity-visit-record": "node scripts/check-activity-visit-record.mjs",
+    "check:legacy-routes": "node scripts/check-legacy-routes.mjs",
+    "check:legacy-short-links": "node scripts/check-legacy-short-links.mjs",
+    "check:legacy-url-parsing": "node scripts/check-legacy-url-parsing.mjs",
+    "check:release-copy": "node scripts/check-release-copy.mjs",
+    "check:menu-routing": "node scripts/check-menu-routing.mjs",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 19528"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.7"
+  }
+}

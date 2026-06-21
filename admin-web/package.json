@@ -1,0 +1,33 @@
+{
+  "name": "crmeb-modern-admin-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 19527",
+    "check:delivery": "npm run check:local-entry && npm run check:release-copy && npm run check:menu-coverage && npm run check:runtime-menu && npm run check:bargain-form && npm run check:page-layout-category && npm run check:page-layout-index-table && npm run check:page-diy-hotspot && npm run check:order-refund-detail",
+    "check:local-entry": "node scripts/check-local-entry.mjs",
+    "check:bargain-form": "node scripts/check-bargain-form.mjs",
+    "check:page-layout-category": "node scripts/check-page-layout-category.mjs",
+    "check:page-layout-index-table": "node scripts/check-page-layout-index-table.mjs",
+    "check:page-diy-hotspot": "node scripts/check-page-diy-hotspot.mjs",
+    "check:order-refund-detail": "node scripts/check-order-refund-detail.mjs",
+    "check:release-copy": "node scripts/check-release-copy.mjs",
+    "check:menu-coverage": "node scripts/check-menu-coverage.mjs",
+    "check:runtime-menu": "node scripts/check-runtime-menu.mjs",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 19527"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.7.9",
+    "element-plus": "^2.9.1",
+    "pinia": "^2.3.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.7"
+  }
+}

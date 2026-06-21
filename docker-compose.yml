@@ -1,0 +1,133 @@
+services:
+  mysql:
+    image: mysql:8.0
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${CRMEB_MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${CRMEB_MYSQL_DATABASE:-single_open}
+      MYSQL_USER: ${CRMEB_DB_USERNAME:-crmeb}
+      MYSQL_PASSWORD: ${CRMEB_DB_PASSWORD:-crmeb}
+      TZ: Asia/Shanghai
+    ports:
+      - "${CRMEB_MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./legacy-deps/db/single_open_current.sql:/docker-entrypoint-initdb.d/01-single-open.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${CRMEB_REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  admin-api:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+      args:
+        MODULE: crmeb-modern-admin-api
+    environment:
+      CRMEB_ADMIN_PORT: 8080
+      CRMEB_DB_URL: ${CRMEB_DB_URL:-jdbc:mysql://mysql:3306/single_open?useUnicode=true&characterEncoding=UTF8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+      CRMEB_DB_USERNAME: ${CRMEB_DB_USERNAME:-crmeb}
+      CRMEB_DB_PASSWORD: ${CRMEB_DB_PASSWORD:-crmeb}
+      CRMEB_REDIS_HOST: redis
+      CRMEB_REDIS_PORT: 6379
+      CRMEB_REDIS_DATABASE: ${CRMEB_REDIS_DATABASE:-6}
+      CRMEB_IMAGE_PATH: /data/upload/
+      CRMEB_SITE_URL: ${CRMEB_ADMIN_SITE_URL:-http://127.0.0.1:9527}
+    ports:
+      - "${CRMEB_ADMIN_API_PORT:-8080}:8080"
+    volumes:
+      - ./legacy-deps/upload:/data/upload
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/admin/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  front-api:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+      args:
+        MODULE: crmeb-modern-front-api
+    environment:
+      CRMEB_FRONT_PORT: 8081
+      CRMEB_DB_URL: ${CRMEB_DB_URL:-jdbc:mysql://mysql:3306/single_open?useUnicode=true&characterEncoding=UTF8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+      CRMEB_DB_USERNAME: ${CRMEB_DB_USERNAME:-crmeb}
+      CRMEB_DB_PASSWORD: ${CRMEB_DB_PASSWORD:-crmeb}
+      CRMEB_REDIS_HOST: redis
+      CRMEB_REDIS_PORT: 6379
+      CRMEB_REDIS_DATABASE: ${CRMEB_REDIS_DATABASE:-6}
+      CRMEB_IMAGE_PATH: /data/upload/
+      CRMEB_SITE_URL: ${CRMEB_APP_SITE_URL:-http://127.0.0.1:9528}
+    ports:
+      - "${CRMEB_FRONT_API_PORT:-8081}:8081"
+    volumes:
+      - ./legacy-deps/upload:/data/upload
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8081/api/front/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  admin-web:
+    build:
+      context: .
+      dockerfile: admin-web/Dockerfile
+    ports:
+      - "${CRMEB_ADMIN_WEB_PORT:-9527}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      admin-api:
+        condition: service_healthy
+
+  app-web:
+    build:
+      context: .
+      dockerfile: app-web/Dockerfile
+    ports:
+      - "${CRMEB_APP_WEB_PORT:-9528}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      front-api:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
+  redis-data:

@@ -1,0 +1,31 @@
+server:
+  port: ${CRMEB_ADMIN_PORT:8080}
+
+spring:
+  application:
+    name: crmeb-modern-admin-api
+  datasource:
+    url: ${CRMEB_DB_URL:jdbc:mysql://127.0.0.1:3306/single_open?useUnicode=true&characterEncoding=UTF8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    username: ${CRMEB_DB_USERNAME:crmeb}
+    password: ${CRMEB_DB_PASSWORD:crmeb}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${CRMEB_REDIS_HOST:127.0.0.1}
+      port: ${CRMEB_REDIS_PORT:6379}
+      password: ${CRMEB_REDIS_PASSWORD:}
+      database: ${CRMEB_REDIS_DATABASE:6}
+
+crmeb:
+  image-path: ${CRMEB_IMAGE_PATH:./legacy-deps/upload/}
+  site-url: ${CRMEB_SITE_URL:http://127.0.0.1:9527}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

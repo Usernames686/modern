@@ -1,0 +1,38 @@
+package com.zbkj.service.service;
+
+
+/**
+ * 订单任务服务 StoreOrderService 接口
+
+
+ */
+ public interface OrderTaskService{
+
+     void cancelByUser();
+
+     void refundApply();
+
+     void complete();
+
+    void orderPaySuccessAfter();
+
+    /**
+     * 自动取消未支付订单
+     */
+    void autoCancel();
+
+    /**
+     * 订单收货
+     */
+    void orderReceiving();
+
+    /**
+     * 订单自动完成
+     */
+    void autoComplete();
+
+    /**
+     * 订单自动收货
+     */
+    void autoTakeDelivery();
+}
