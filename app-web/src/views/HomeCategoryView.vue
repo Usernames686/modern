@@ -16,6 +16,7 @@
     <HomeDiyRenderer
       v-if="isHome"
       :components="diyComponents"
+      compact
       :asset-url="assetUrl"
       @open-link="$emit('open-diy-link', $event)"
     />

@@ -45,9 +45,23 @@ public class FrontSeckillService {
                 .gt("end_time", currentHour)
                 .orderByAsc("start_time")
                 .orderByAsc("id"));
-        return managers.stream()
+        List<Map<String, Object>> headers = managers.stream()
                 .filter(manager -> countVisibleProducts(manager.getId()) > 0)
                 .map(manager -> toManagerItem(manager, currentHour))
+                .toList();
+        return headers.isEmpty() ? fallbackHeader() : headers;
+    }
+
+    private List<Map<String, Object>> fallbackHeader() {
+        int currentHour = LocalDateTime.now().getHour();
+        List<StoreSeckillManger> managers = mangerMapper.selectList(new QueryWrapper<StoreSeckillManger>()
+                .eq("is_del", 0)
+                .eq("status", "'1'")
+                .orderByAsc("start_time")
+                .orderByAsc("id"));
+        return managers.stream()
+                .filter(manager -> countDisplayProducts(manager.getId()) > 0)
+                .map(manager -> toManagerItem(manager, currentHour, true))
                 .toList();
     }
 
@@ -68,6 +82,11 @@ public class FrontSeckillService {
         Page<StoreSeckill> result = seckillMapper.selectPage(new Page<>(safePage, safeLimit), visibleSeckillQuery()
                 .eq("time_id", timeId)
                 .orderByDesc("id"));
+        if (result.getTotal() == 0) {
+            result = seckillMapper.selectPage(new Page<>(safePage, safeLimit), displaySeckillQuery()
+                    .eq("time_id", timeId)
+                    .orderByDesc("id"));
+        }
         List<Map<String, Object>> rows = result.getRecords().stream().map(this::toSeckillItem).toList();
         return new PageResponse<>(safePage, safeLimit, result.getTotal(), rows);
     }
@@ -78,7 +97,7 @@ public class FrontSeckillService {
 
     public Map<String, Object> detail(Integer id, Integer uid) {
         StoreSeckill seckill = seckillMapper.selectById(id);
-        if (seckill == null || !isVisibleSeckill(seckill)) {
+        if (seckill == null || (!isVisibleSeckill(seckill) && !isDisplaySeckill(seckill))) {
             throw new IllegalArgumentException("秒杀商品不存在或已下架");
         }
         if (uid != null) {
@@ -91,6 +110,10 @@ public class FrontSeckillService {
         return seckillMapper.selectCount(visibleSeckillQuery().eq("time_id", timeId));
     }
 
+    private long countDisplayProducts(Integer timeId) {
+        return seckillMapper.selectCount(displaySeckillQuery().eq("time_id", timeId));
+    }
+
     private QueryWrapper<StoreSeckill> visibleSeckillQuery() {
         LocalDate today = LocalDate.now();
         return new QueryWrapper<StoreSeckill>()
@@ -99,6 +122,14 @@ public class FrontSeckillService {
                 .eq("is_show", 1)
                 .le("date(start_time)", today)
                 .ge("date(stop_time)", today);
+    }
+
+    private QueryWrapper<StoreSeckill> displaySeckillQuery() {
+        return new QueryWrapper<StoreSeckill>()
+                .eq("is_del", 0)
+                .eq("is_show", 1)
+                .gt("stock", 0)
+                .gt("quota", 0);
     }
 
     private boolean isVisibleSeckill(StoreSeckill item) {
@@ -112,20 +143,34 @@ public class FrontSeckillService {
                 && !item.getStopTime().toLocalDate().isBefore(today);
     }
 
+    private boolean isDisplaySeckill(StoreSeckill item) {
+        return !Boolean.TRUE.equals(item.getIsDel())
+                && Boolean.TRUE.equals(item.getIsShow())
+                && item.getStock() != null
+                && item.getStock() > 0
+                && item.getQuota() != null
+                && item.getQuota() > 0;
+    }
+
     private Map<String, Object> toManagerItem(StoreSeckillManger manager, int currentHour) {
+        return toManagerItem(manager, currentHour, false);
+    }
+
+    private Map<String, Object> toManagerItem(StoreSeckillManger manager, int currentHour, boolean fallback) {
         Map<String, Object> item = new LinkedHashMap<>();
         int start = manager.getStartTime() == null ? 0 : manager.getStartTime();
         int end = manager.getEndTime() == null ? 0 : manager.getEndTime();
-        int status = currentHour < start ? 1 : 2;
+        int status = fallback ? 3 : currentHour < start ? 1 : 2;
         item.put("id", manager.getId());
         item.put("name", manager.getName());
         item.put("time", String.format("%02d:00,%02d:00", start, end));
         item.put("startTime", start);
         item.put("endTime", end);
         item.put("status", status);
-        item.put("statusName", status == 2 ? "抢购中" : "即将开始");
+        item.put("statusName", fallback ? "往期活动" : status == 2 ? "抢购中" : "即将开始");
         item.put("killStatus", status);
-        item.put("isCheck", start <= currentHour && currentHour < end);
+        item.put("isCheck", fallback || (start <= currentHour && currentHour < end));
+        item.put("fallback", fallback);
         item.put("slide", slideList(manager.getSilderImgs()));
         item.put("silderImgs", manager.getSilderImgs());
         item.put("stop", LocalDate.now() + String.format(" %02d:00:00", end));

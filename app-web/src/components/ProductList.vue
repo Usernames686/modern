@@ -26,6 +26,10 @@
             <span v-if="Number(product.stock || 0) > 0" class="product-tag muted">现货</span>
           </div>
           <h2>{{ product.storeName }}</h2>
+          <div class="product-subline">
+            <span>{{ shortBenefit(product) }}</span>
+            <span>{{ salesCount(product) || Number(product.stock || 0) }}人关注</span>
+          </div>
           <div v-if="product.price !== '' && product.price !== undefined" class="price-row">
             <strong>￥{{ product.price }}</strong>
             <span v-if="product.otPrice">￥{{ product.otPrice }}</span>
@@ -76,6 +80,15 @@ function isText(value) {
 
 function salesCount(product) {
   return Number(product.sales || 0) + Number(product.ficti || 0);
+}
+
+function shortBenefit(product) {
+  const name = String(product.storeName || "");
+  if (/鞋|服|包|妆|香水|耳机|数码/.test(name)) return "品质严选";
+  if (/厨房|锅|家居|日用/.test(name)) return "居家好物";
+  if (/母婴|儿童|奶瓶|玩具/.test(name)) return "安心精选";
+  if (/运动|瑜伽|露营|旅行/.test(name)) return "出行优选";
+  return "今日推荐";
 }
 
 defineEmits(["open"]);

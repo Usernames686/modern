@@ -406,7 +406,7 @@ public class FrontCommerceService {
                 .distinct()
                 .toList();
         List<Integer> categoryIds = categoryIds(rows);
-        return commerceMapper.selectCouponsForOrder(uid, proTotal, productIds, categoryIds).stream()
+        List<Map<String, Object>> received = commerceMapper.selectCouponsForOrder(uid, proTotal, productIds, categoryIds).stream()
                 .map(coupon -> {
                     Map<String, Object> item = new HashMap<>(coupon);
                     item.put("id", coupon.get("id"));
@@ -415,9 +415,77 @@ public class FrontCommerceService {
                     item.put("day", 0);
                     item.put("isUse", 0);
                     item.put("use_title", "");
+                    item.put("received", true);
                     return item;
                 })
                 .toList();
+        List<Map<String, Object>> receivable = receivableCouponsForOrder(uid, proTotal, productIds, categoryIds, received);
+        List<Map<String, Object>> result = new ArrayList<>();
+        result.addAll(received);
+        result.addAll(receivable);
+        return result;
+    }
+
+    private List<Map<String, Object>> receivableCouponsForOrder(
+            Integer uid,
+            BigDecimal proTotal,
+            List<Integer> productIds,
+            List<Integer> categoryIds,
+            List<Map<String, Object>> received) {
+        Set<Integer> listedCouponIds = received.stream()
+                .map(item -> numberValue(firstPresent(item.get("couponId"), item.get("id"))))
+                .filter(id -> id > 0)
+                .collect(Collectors.toSet());
+        QueryWrapper<StoreCoupon> query = new QueryWrapper<>();
+        LocalDateTime now = LocalDateTime.now();
+        query.eq("is_del", 0)
+                .eq("status", 1)
+                .eq("type", 1)
+                .le("min_price", proTotal)
+                .and(wrapper -> wrapper.eq("is_limited", 0).or().gt("last_total", 0))
+                .and(wrapper -> wrapper.isNull("receive_start_time").or().le("receive_start_time", now))
+                .and(wrapper -> wrapper.isNull("receive_end_time").or().gt("receive_end_time", now))
+                .and(wrapper -> wrapper.eq("is_fixed_time", 0)
+                        .or(nested -> nested
+                                .and(start -> start.isNull("use_start_time").or().le("use_start_time", now))
+                                .and(end -> end.isNull("use_end_time").or().gt("use_end_time", now))))
+                .orderByDesc("sort")
+                .orderByDesc("id");
+        if (!listedCouponIds.isEmpty()) {
+            query.notIn("id", listedCouponIds);
+        }
+        List<StoreCoupon> candidates = couponMapper.selectList(query);
+        Set<Integer> alreadyReceived = receivedCouponIds(uid, candidates);
+        return candidates.stream()
+                .filter(coupon -> !alreadyReceived.contains(coupon.getId()))
+                .filter(coupon -> couponMatchesOrder(coupon, productIds, categoryIds))
+                .limit(10)
+                .map(coupon -> {
+                    Map<String, Object> item = toReceiveCouponResponse(coupon, false);
+                    item.put("received", false);
+                    item.put("needReceive", true);
+                    item.put("use_title", "领取后使用");
+                    return item;
+                })
+                .toList();
+    }
+
+    private boolean couponMatchesOrder(StoreCoupon coupon, List<Integer> productIds, List<Integer> categoryIds) {
+        int useType = coupon.getUseType() == null ? 1 : coupon.getUseType();
+        if (useType == 1) {
+            return true;
+        }
+        Set<Integer> primaryIds = idSet(coupon.getPrimaryKey());
+        if (primaryIds.isEmpty()) {
+            return false;
+        }
+        if (useType == 2) {
+            return productIds.stream().anyMatch(primaryIds::contains);
+        }
+        if (useType == 3) {
+            return categoryIds.stream().anyMatch(primaryIds::contains);
+        }
+        return false;
     }
 
     public PageResponse<StoreCouponUserResponse> userCoupons(Integer uid, String type, int page, int limit) {

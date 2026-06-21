@@ -1,12 +1,12 @@
 # CRMEB Legacy Source Snapshot
 
-这个目录保存老项目源码副本，方便在 `modern` 交付目录内继续按模块对照、复制和适配老功能。
+这个目录保存参考源码副本，方便在 `modern` 交付目录内继续按模块对照和二次开发。
 
 ## 内容
 
-- `admin/`：老后台前端源码副本。
-- `app/`：老 H5/uni-app 源码副本。
-- `crmeb/`：老 Java 后端源码副本。
+- `admin/`：后台前端参考源码副本。
+- `app/`：H5/uni-app 参考源码副本。
+- `crmeb/`：Java 后端参考源码副本。
 
 ## 排除内容
 
@@ -25,4 +25,4 @@
 
 - 这里是对照和移植来源，不是继续运行的老工程入口。
 - 新开发仍以 `modern/admin-web`、`modern/app-web`、`modern/backend` 为主。
-- 需要补老功能时，按模块从这里复制页面结构、字段、业务规则，再适配 Vue3、Element Plus、Spring Boot 3 和当前老库。
+- 需要补齐历史业务能力时，按模块从这里对照页面结构、字段、业务规则，再适配 Vue3、Element Plus、Spring Boot 3 和当前数据库。

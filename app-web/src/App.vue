@@ -1447,7 +1447,7 @@ const sortedCategories = computed(() =>
 const flatCategories = computed(() => sortedCategories.value.flatMap((item) => [item, ...(item.child || [])]).slice(0, 18));
 const homeCategories = computed(() => flatCategories.value.slice(0, 9));
 const mainBanner = computed(() => homeBanners.value[0] || null);
-const tabs = computed(() => homeIndexTabs.value.length ? homeIndexTabs.value : fallbackTabs);
+const tabs = computed(() => homeIndexTabs.value.length ? normalizeHomeTabs(homeIndexTabs.value) : fallbackTabs);
 const mergedProfileMenus = computed(() => {
   const map = new Map();
   for (const item of [...profileMenus.value, ...fallbackProfileMenus]) {
@@ -1759,15 +1759,45 @@ function normalizeHomeIndexTabs(list) {
   return (Array.isArray(list) ? list : [])
     .map((item, index) => ({
       ...item,
-      type: `layout-${item.id || item.tempid || index}`,
-      name: item.name || item.title || `推荐${index + 1}`,
+      type: homeTabType(item.name || item.title || item.info || "", index),
+      name: cleanHomeTabName(item.name || item.title || item.info || `推荐${index + 1}`),
       info: item.info || item.desc || item.subtitle || "",
       image: item.image || item.pic || "",
-      url: legacyMenuUrl(item),
+      url: "",
       sourceIndex: index
     }))
     .filter((item) => item.name && item.status !== false)
     .slice(0, 8);
+}
+
+function normalizeHomeTabs(list) {
+  const seen = new Set();
+  return [
+    { type: 0, name: "综合" },
+    ...list.map((item, index) => ({
+      ...item,
+      type: homeTabType(item.name || item.info || "", index),
+      name: cleanHomeTabName(item.name || item.info || `推荐${index + 1}`)
+    }))
+  ].filter((item) => {
+    const key = String(item.type);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 5);
+}
+
+function homeTabType(label, index = 0) {
+  const text = cleanHomeTabName(label);
+  if (text.includes("精品") || text.includes("推荐")) return 1;
+  if (text.includes("热门") || text.includes("热卖") || text.includes("榜")) return 2;
+  if (text.includes("新品") || text.includes("首发")) return 3;
+  if (text.includes("促销") || text.includes("优惠") || text.includes("特价")) return 4;
+  return Number(index || 0) + 1;
+}
+
+function cleanHomeTabName(value) {
+  return cleanDisplayText(value).replace(/^\/+/, "") || "推荐";
 }
 
 function normalizeHomeIndexProducts(list) {
@@ -1816,6 +1846,7 @@ function mergeHomeProducts(primary, extra) {
   return [...(primary || []), ...(extra || [])]
     .map(normalizeDisplayProduct)
     .filter(isDisplayReadyProduct)
+    .sort(compareHomeProducts)
     .filter((item) => {
       const key = String(item.id || item.url || `${item.storeName}-${item.image}`);
       if (seen.has(key)) {
@@ -1825,6 +1856,22 @@ function mergeHomeProducts(primary, extra) {
       return true;
     })
     .slice(0, 20);
+}
+
+function compareHomeProducts(left, right) {
+  return displayScore(right) - displayScore(left);
+}
+
+function displayScore(product) {
+  const name = cleanDisplayText(product?.storeName || "");
+  const image = String(product?.image || "").toLowerCase();
+  let score = Number(product?.sales || 0) + Number(product?.ficti || 0);
+  if (/category-quality|dummyjson/.test(image)) score += 800;
+  if (/category-showcase/.test(image)) score -= 300;
+  if (/[\u4e00-\u9fa5].*[\u4e00-\u9fa5]/.test(name)) score += 80;
+  if (/[a-z]{4,}/i.test(name)) score -= 30;
+  if (name.length <= 3) score -= 500;
+  return score;
 }
 
 function isLayoutType(type) {
@@ -2288,7 +2335,7 @@ async function loadProducts() {
     }
     const params = {
       page: 1,
-      limit: activeCid.value || keyword.value ? 24 : 40,
+      limit: activeCid.value || keyword.value ? 24 : 100,
       keyword: keyword.value || undefined,
       cid: categoryQueryCid(activeCid.value) || undefined,
       salesOrder: legacyProductRank.value ? "desc" : undefined
@@ -2371,9 +2418,11 @@ function displayProductList(list) {
 
 function normalizeDisplayProduct(product) {
   if (!product) return product;
+  const sourceName = cleanDisplayText(product.storeName || product.name || product.title);
   return {
     ...product,
-    storeName: cleanDisplayText(product.storeName || product.name || product.title),
+    sourceStoreName: sourceName,
+    storeName: polishProductName(sourceName, product),
     image: typeof product.image === "string" ? product.image.trim() : product.image,
     unitName: cleanDisplayText(product.unitName) || "件"
   };
@@ -2395,10 +2444,65 @@ function isDisplayReadyProduct(product) {
 
 function isPoorDisplayImage(name, image) {
   const text = `${name} ${image}`.toLowerCase();
+  if (/category-showcase\/.+-fast-\d+\.(webp|jpe?g|png)/i.test(image)) {
+    return true;
+  }
+  if (/\/public\/store\//i.test(image) && cleanDisplayText(name).length <= 3) {
+    return true;
+  }
   return [
-    "276-cookware-fast-1.webp",
-    "276-cookware-fast-3.webp"
+    "placeholder",
+    "test",
+    "demo",
+    "276-cookware-fast",
+    "291-facial-brush-fast",
+    "292-beauty-device-fast",
+    "300-household-fast",
+    "797-high-heels-fast",
+    "802-travel-accessories-fast",
+    "803-yoga-mat-fast",
+    "804-game-console-fast"
   ].some((keyword) => text.includes(keyword));
+}
+
+function polishProductName(name, product = {}) {
+  const cleanName = cleanDisplayText(name);
+  const image = String(product.image || "").toLowerCase();
+  if (!cleanName) return "";
+  const prefix = cleanName.match(/^([\u4e00-\u9fa5]{2,6})\s+(.+)$/);
+  const category = prefix?.[1] || "";
+  const english = prefix?.[2] || "";
+  if (!category || !/[a-z]/i.test(english)) {
+    return cleanName;
+  }
+  const mapped = localProductTitle(category, english, image);
+  return mapped || cleanName;
+}
+
+function localProductTitle(category, english, image) {
+  const text = english.toLowerCase();
+  const rules = [
+    [/airpods max|headphones|earphones|homepod|airpods|beats/, "无线蓝牙耳机"],
+    [/air jordan|sneakers|trainers|cleats|shoes/, "运动休闲鞋"],
+    [/check shirt|plaid shirt|short sleeve|tshirt|men shirt/, "男士休闲衬衫"],
+    [/gown|dress|frock|suit|skirt|corset/, "女士通勤连衣裙"],
+    [/lipstick|mascara|eyeshadow|powder|nail polish|earring/, "精致彩妆单品"],
+    [/calvin|chanel|dior|gucci|dolce|eau|perfume/, "持香淡香水"],
+    [/handbag|backpack|bag/, "通勤时尚包袋"],
+    [/tissue|paper box/, "家用纸巾收纳"],
+    [/wok|pan|pot|lunch box|microwave|plate|mug|tongs/, "厨房实用器具"]
+  ];
+  const matched = rules.find(([pattern]) => pattern.test(text) || pattern.test(image));
+  if (!matched) {
+    return "";
+  }
+  const series = titleSeries(english);
+  return `${category} ${matched[1]}${series}`;
+}
+
+function titleSeries(value) {
+  const hash = Array.from(String(value)).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return [" 精选款", " 热卖款", " 升级款", " 高性价比款"][hash % 4];
 }
 
 function cleanDisplayText(value) {
@@ -4254,6 +4358,20 @@ function closeCouponPanel() {
 }
 
 async function selectCoupon(coupon) {
+  if (coupon?.needReceive && !coupon.received) {
+    try {
+      await apiPost("/api/front/coupon/receive", { couponId: coupon.couponId || coupon.id }, true);
+      showToast("领取成功");
+      couponList.value = await apiGet(`/api/front/coupons/order/${preOrderNo.value}`, {}, true);
+      const received = couponList.value.find((item) => Number(item.couponId || item.id) === Number(coupon.couponId || coupon.id) && item.received !== false);
+      if (received) {
+        coupon = received;
+      }
+    } catch (error) {
+      showToast(error.message);
+      return;
+    }
+  }
   selectedCoupon.value = selectedCoupon.value?.id === coupon.id ? null : coupon;
   couponList.value = couponList.value.map((item) => ({
     ...item,

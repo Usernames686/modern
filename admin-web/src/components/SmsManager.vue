@@ -123,7 +123,7 @@
           </el-form>
         </div>
       </template>
-      <el-table v-loading="loading" :data="recordRows" size="small" highlight-current-row>
+      <el-table v-loading="loading" :data="recordRows" size="small" highlight-current-row class="sms-record-table">
         <el-table-column prop="id" label="ID" min-width="70" />
         <el-table-column prop="uid" label="短信账号" min-width="120" show-overflow-tooltip />
         <el-table-column prop="phone" label="手机号" min-width="120" />

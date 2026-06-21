@@ -1,16 +1,24 @@
-# CRMEB Modern 技术栈迁移工程
+# CRMEB Modern 一体化电商系统
 
-这个目录是 CRMEB 老项目的现代化交付工程。新版后台、H5、后端、Docker、数据库快照、上传素材和老源码对照副本都已经收口在 `modern/` 内，交付时优先使用本目录。
+这个目录是 CRMEB Modern 的独立交付工程。新版后台、H5、后端、Docker、数据库快照、上传素材和项目文档都已经收口在 `modern/` 内，交付、部署和二次开发优先使用本目录。
 
 ## 先看这里
 
 - 交付说明：`docs/交付说明.md`
 - 开发运维手册：`docs/开发运维手册.md`
-- 原始交付资料：`docs/legacy-delivery/`
+- 新版需求规格说明书：`docs/《CRMEB Modern》需求规格说明书.md`
+- 新版设计说明书：`docs/《CRMEB Modern》设计说明书.md`
+- 新版数据库设计说明书：`docs/《CRMEB Modern》数据库设计说明书.md`
+- 新版接口文档：`docs/《CRMEB Modern》接口文档.md`
+- 新版部署安装说明书：`docs/《CRMEB Modern》系统部署安装说明书.md`
+- 新版系统测试说明书：`docs/《CRMEB Modern》系统测试说明书.md`
+- 新版项目实训指导书：`docs/《CRMEB Modern》项目实训指导书.md`
+- 新版素材与交付清单：`docs/《CRMEB Modern》素材与交付清单.md`
+- 交付前文件审计报告：`docs/交付前文件审计报告.md`
 - 运行依赖说明：`legacy-deps/README.md`
-- 老源码副本说明：`legacy-source/README.md`
+- 参考源码副本说明：`legacy-source/README.md`
 - 交付审计记录：`DELIVERY_AUDIT.md`
-- 迁移过程记录：`MIGRATION.md`
+- 开发过程记录：`MIGRATION.md`
 
 默认入口：
 
@@ -29,13 +37,13 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-当前技术栈迁移目标是“老系统功能级替代，新技术栈实现”：保留老业务能力、接口路径、数据结构和核心流程；UI 可以在 Vue3 / Element Plus / 新 H5 中优化，但页面必须真实可用、数据真实、入口不空、操作不丢。
+当前交付目标是“新技术栈实现，兼容原系统核心业务”：保留原业务能力、接口路径、数据结构和核心流程；UI 已在 Vue3 / Element Plus / 新 H5 中整理优化，页面必须真实可用、数据真实、入口不空、操作不丢。
 
 ## 当前技术栈
 
 - 后端：Java 17 + Spring Boot 3 + MyBatis Plus Boot3 + springdoc-openapi
 - 后台：Vue 3 + Vite + Element Plus
-- 用户端：以老 `app/` 为 UI/功能母版升级到 Vue 3 + Vite H5
+- 用户端：Vue 3 + Vite H5，兼容原 H5 主要业务路径
 - 部署：Docker Compose + MySQL 8 + Redis 7 + Nginx
 
 ## 目录
@@ -46,7 +54,7 @@ docker compose up -d --build
   - `crmeb-modern-admin-api`
   - `crmeb-modern-front-api`
 - `admin-web`：新后台管理端入口
-- `app-web`：用户端 H5 新技术栈入口，保留老 H5 路径、外观和业务流程
+- `app-web`：用户端 H5 新技术栈入口，兼容原 H5 主要路径和业务流程
 - `deploy/nginx`：后台和用户端 Nginx 代理配置
 - `docker-compose.yml`：现代技术栈编排
 - `DELIVERY_AUDIT.md`：交付审计结论、验收脚本证据和第三方安全边界
@@ -113,7 +121,7 @@ node scripts/browser-smoke.mjs
 node scripts/browser-interaction-smoke.mjs
 ```
 
-本机直接启动 API 时，上传目录默认建议指向 `modern/legacy-deps/upload`。这个目录是老项目 `crmeb/upload` 的运行资源副本，老商品图、登录图、富文本图片和新上传文件都会继续走 `/crmebimage/**` 老路径：
+本机直接启动 API 时，上传目录默认建议指向 `modern/legacy-deps/upload`。这个目录是新版项目随包交付的运行资源目录，商品图、登录图、富文本图片和新上传文件都会继续走 `/crmebimage/**` 兼容路径：
 
 ```bash
 cd modern
@@ -123,7 +131,7 @@ java -jar backend/crmeb-modern-admin-api/target/crmeb-modern-admin-api-0.1.0-SNA
 java -jar backend/crmeb-modern-front-api/target/crmeb-modern-front-api-0.1.0-SNAPSHOT.jar --server.port=18081
 ```
 
-`admin-web` 本地 Vite 开发服务默认运行在 `http://127.0.0.1:19527`，并把 `/api/admin/**` 代理到 `http://127.0.0.1:18080`，避免误打到老后台 `8080`。当前本机 `http://127.0.0.1:9527` 可能仍是老后台静态页；本地调试新版后台请以 `19527` 为准。如需改成 Docker 或远程 API，可设置 `CRMEB_ADMIN_API_TARGET`。
+`admin-web` 本地 Vite 开发服务默认运行在 `http://127.0.0.1:19527`，并把 `/api/admin/**` 代理到 `http://127.0.0.1:18080`。如需改成 Docker 或远程 API，可设置 `CRMEB_ADMIN_API_TARGET`。
 
 本机调试访问地址：
 
@@ -136,7 +144,7 @@ API 和前端服务都启动后，运行 `node modern/scripts/runtime-smoke.mjs`
 
 ## Docker 启动
 
-如果老系统还在占用 `3306/6379/8080/8081/9527/9528`，先停止老系统：
+如果本机已有其他服务占用 `3306/6379/8080/8081/9527/9528`，先释放端口或修改 `.env` 端口配置：
 
 ```bash
 ../.local-runtime/stop-local.sh
@@ -152,12 +160,12 @@ docker compose up -d --build
 
 Compose 会在镜像内完成后端 Maven 打包和前端 Vite 构建，不需要提前提交 `target` 或 `dist` 产物。
 `.env` 中的端口、数据库账号、站点地址都可按部署环境调整；不改 `.env` 时会使用本地默认值。
-Compose 会把 `modern/legacy-deps/upload` 挂载到 API 容器的 `/data/upload`，并用 `modern/legacy-deps/db/single_open_current.sql` 初始化 MySQL，避免迁移后历史图片和当前演示数据丢失。
+Compose 会把 `modern/legacy-deps/upload` 挂载到 API 容器的 `/data/upload`，并用 `modern/legacy-deps/db/single_open_current.sql` 初始化 MySQL，保证交付演示数据和图片资源完整可用。
 
 访问地址：
 
-- 后台：`http://127.0.0.1:9527`（Docker 独立部署时；本机已有老后台时请用 `19527` 调试新版后台）
-- 用户端：`http://127.0.0.1:9528`（Docker 独立部署时；本机已有老用户端时请用 `19528` 调试新版用户端）
+- 后台：`http://127.0.0.1:9527`（Docker 独立部署）
+- 用户端：`http://127.0.0.1:9528`（Docker 独立部署）
 - 管理 API：`http://127.0.0.1:8080/api/admin/health`
 - 用户 API：`http://127.0.0.1:8081/api/front/health`
 
@@ -178,16 +186,14 @@ Compose 的 API 容器健康检查使用轻量业务健康口 `/api/admin/health
 
 - `admin-web` 代理 `/api/admin/**`、`/api/public/**`、`/crmebimage/**`、`/public/**` 到 `admin-api`。
 - `app-web` 代理 `/api/front/**`、`/api/public/**`、`/crmebimage/**`、`/public/**` 到 `front-api`。
-- 图片和上传资源继续通过老路径访问，不在前端写死旧 IP。
-- 上传接口兼容老路径和老字段：`/api/admin/upload/image`、`/api/admin/upload/file`、`/api/front/upload/image`、`/api/front/upload/file`、`/api/front/user/upload/image`，文件字段同时兼容 `multipart` 和 `file`。
-- 后台素材管理兼容老路径：`/api/admin/system/attachment/list`、`/api/admin/system/attachment/delete/{ids}`、`/api/admin/system/attachment/move`、`/api/admin/system/attachment/info/{id}`。
+- 图片和上传资源继续通过兼容路径访问，不在前端写死旧 IP。
+- 上传接口兼容常用路径和字段：`/api/admin/upload/image`、`/api/admin/upload/file`、`/api/front/upload/image`、`/api/front/upload/file`、`/api/front/user/upload/image`，文件字段同时兼容 `multipart` 和 `file`。
+- 后台素材管理接口：`/api/admin/system/attachment/list`、`/api/admin/system/attachment/delete/{ids}`、`/api/admin/system/attachment/move`、`/api/admin/system/attachment/info/{id}`。
 
-## 迁移规则
+## 交付规则
 
-- 保留老数据库结构，Docker 默认使用 `modern/legacy-deps/db/single_open_current.sql` 初始化；原始 SQL 副本保存在 `modern/legacy-deps/sql/single_open.sql`。
-- 保持接口路径兼容：`/api/admin/**`、`/api/front/**`、`/api/public/**`。
-- 保留老后台和用户端 UI。开源项目只作为工程结构参考，不作为视觉替换方案。
-- 每个页面迁移时，必须对照 `admin/` 或 `app/` 的原页面补齐功能、布局、字段、弹窗和交互。
-- 老工程源码参考副本已复制到 `modern/legacy-source`，新工程逐模块迁移业务；新版运行所需上传资源和 SQL 快照已复制到 `modern/legacy-deps`。交付时优先看 `modern/`，外层 `crmeb`、`admin`、`app` 只作为原始备份。
-- 用户端升级路线见 `H5_STACK_UPGRADE.md`：老 `app/` 只作为母版和短期兜底，主线交付放到 `modern/app-web`。
-- 下一阶段优先迁移：登录、权限、首页、商品、订单、用户、上传。
+- 数据库结构保持兼容，Docker 默认使用 `modern/legacy-deps/db/single_open_current.sql` 初始化；原始 SQL 副本保存在 `modern/legacy-deps/sql/single_open.sql`。
+- 接口路径保持兼容：`/api/admin/**`、`/api/front/**`、`/api/public/**`。
+- 页面以真实业务可用为准，UI 可在新技术栈下优化。
+- `modern/legacy-source` 是参考源码副本，用于后续对照和二次开发；新版运行入口是 `admin-web`、`app-web`、`backend`。
+- 新版运行所需上传资源和 SQL 快照在 `modern/legacy-deps`。

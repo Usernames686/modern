@@ -250,6 +250,7 @@ import SafeImage from "./SafeImage.vue";
 
 const props = defineProps({
   components: { type: Array, default: () => [] },
+  compact: Boolean,
   assetUrl: { type: Function, required: true }
 });
 
@@ -257,11 +258,14 @@ const emit = defineEmits(["open-link"]);
 
 const marketingTypes = ["home_goods_list", "home_coupon", "home_seckill", "home_group", "home_bargain", "home_article", "home_comb"];
 const productTypes = ["home_goods_list", "home_seckill", "home_group", "home_bargain"];
+const compactHomeTypes = ["home_coupon", "home_seckill", "home_group", "home_bargain"];
 
 const visibleComponents = computed(() =>
   props.components
     .filter((component) => component && !component.isHide && supportedTypes.includes(component.type) && hasRenderableContent(component))
+    .filter((component) => !props.compact || compactHomeTypes.includes(component.type))
     .sort((left, right) => componentWeight(left) - componentWeight(right))
+    .slice(0, props.compact ? 2 : 40)
 );
 
 const supportedTypes = [

@@ -26,7 +26,7 @@
               {{ coupon.name }}
             </h2>
             <p>{{ coupon.useStartTimeStr || "" }} - {{ coupon.useEndTimeStr || "" }}</p>
-            <button type="button">{{ selectedCoupon?.id === coupon.id ? "不使用" : "立即使用" }}</button>
+            <button type="button">{{ actionText(coupon) }}</button>
           </div>
         </article>
       </div>
@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   loading: Boolean,
   coupons: { type: Array, default: () => [] },
   selectedCoupon: { type: Object, default: null },
@@ -43,4 +43,15 @@ defineProps({
 });
 
 defineEmits(["close", "select"]);
+
+function actionText(coupon) {
+  if (coupon.needReceive && !coupon.received) {
+    return "领取使用";
+  }
+  return selectedText(coupon);
+}
+
+function selectedText(coupon) {
+  return props.selectedCoupon?.id === coupon?.id ? "不使用" : "立即使用";
+}
 </script>

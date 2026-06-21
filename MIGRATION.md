@@ -1,6 +1,6 @@
 # 业务迁移清单
 
-当前交付口径以 `modern/DELIVERY_GOAL.md` 为准：功能对齐、体验优化、快速交付；允许大量参考和复用 GitHub 官方 `crmeb/crmeb_java`、`crmeb/CRMEB` 与本地老项目，但必须按模块移植或旧版兼容保留，不能整仓覆盖已跑通的 modern 工程。
+当前交付口径以 `modern/DELIVERY_GOAL.md` 为准：功能对齐、体验优化、快速交付；参考官方 `crmeb/crmeb_java`、`crmeb/CRMEB` 与本地老项目，但必须按模块移植或旧版兼容保留，不能整仓覆盖已跑通的 modern 工程。
 
 ## 总原则：功能级替代
 

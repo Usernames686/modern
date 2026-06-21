@@ -1792,7 +1792,7 @@ try {
   await assertText(client, ".divBox", "暂无可购买套餐", "admin sms pay empty package");
 
   await navigate(client, `${adminBase}/operation/systemSms/record`);
-  await waitFor(client, "document.querySelector('.divBox')?.innerText.includes('短信发送记录') && document.querySelector('.el-table__body')", "admin sms record table");
+  await waitFor(client, "document.querySelector('.divBox')?.innerText.includes('短信发送记录') && document.querySelector('.sms-record-table')", "admin sms record table");
   await assertText(client, ".divBox", "手机号", "admin sms record phone filter");
   await assertText(client, ".divBox", "短信内容", "admin sms record content column");
   await assertText(client, ".divBox", "发送状态", "admin sms record status column");
@@ -2990,7 +2990,7 @@ try {
     await clickText(client, ".checkout-view", "优惠券", "H5 checkout coupon panel");
     await waitFor(client, "document.querySelector('.coupon-panel')", "H5 checkout coupon panel visible");
     await assertText(client, ".coupon-panel", "优惠券", "H5 checkout coupon panel title");
-    await waitFor(client, "document.querySelector('.coupon-panel')?.innerText.includes('暂无可用优惠券') || document.querySelector('.coupon-panel')?.innerText.includes('立即使用') || document.querySelector('.coupon-panel')?.innerText.includes('不使用')", "H5 checkout coupon panel content");
+    await waitFor(client, "document.querySelector('.coupon-panel')?.innerText.includes('暂无可用优惠券') || document.querySelector('.coupon-panel')?.innerText.includes('立即使用') || document.querySelector('.coupon-panel')?.innerText.includes('不使用') || document.querySelector('.coupon-panel')?.innerText.includes('领取使用')", "H5 checkout coupon panel content");
     await clickFirst(client, ".coupon-head button", "H5 close checkout coupon panel");
     checked.push({ area: "h5-cart", action: "toggle selection/manage and open checkout without creating order", cartCount: frontCartCount });
   } else {
